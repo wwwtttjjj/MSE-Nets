@@ -184,7 +184,7 @@ if __name__ == "__main__":
 
 	parser.add_argument("--batch_size", type=int, default=1, help="batch_size")
 	parser.add_argument("--gpu", type=int, default=0, help="gpu")
-	parser.add_argument("--fuse", type=int, default=0, help="1 or 2")
+	parser.add_argument("--fuse", type=int, default=0, help="0 or 1")
 
 	
 	args = parser.parse_args()
