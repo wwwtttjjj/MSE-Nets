@@ -9,8 +9,6 @@ from utils import ramps
 import funcy
 from skimage.morphology import square
 import torch.backends.cudnn as cudnn
-from skimage import io
-import wandb
 from torch.nn.modules.loss import CrossEntropyLoss
 from torch.nn import functional as F
 import random
@@ -18,11 +16,7 @@ from same_function import get_data,get_args,evaluate_jaccard,save_results
 from test_sig import Test_models
 
 
-
-# import os
-# os.environ["WANDB_MODE"] = "dryrun"
-
-BASE_PATH = os.path.dirname(os.path.abspath(__file__))  # C:\Users\Jingyi_Wang\Desktop\BuildNet
+BASE_PATH = os.path.dirname(os.path.abspath(__file__))
 # ex = Experiment()
 fs_observer = os.path.join(BASE_PATH, "multi_results")  #
 if not os.path.exists(fs_observer):
@@ -48,10 +42,6 @@ if not args.MPC and not args.UPC:
 	save_best1_name = "M-Nets_best1_"+ str(args.label_unlabel) + '.pth'
 	save_best2_name = "M-Nets_best2_"+ str(args.label_unlabel) + '.pth'
 
-
-# W_name = args.label_unlabel
-# experiment = wandb.init(project='Mutil_task_Unet', resume='allow', anonymous='must', name=W_name)
-# experiment.config.update(dict(batch_size=args.batch_size, labeled_bs = args.labeled_bs, learning_rate=args.base_lr, labeled_num = args.labeled_num))
 
 device = torch.device('cuda:' + str(args.gpu) if torch.cuda.is_available() else 'cpu')
 
@@ -203,8 +193,7 @@ def train_epoch(phase, epoch, model1, model2, dataloader, loss_fn):
 			}
 	return info
 
-def main(args, device, multask=True):
-	batch_size = args.batch_size
+def main(args, device):
 	base_lr = args.base_lr
 	patience = args.patience
 
@@ -215,11 +204,6 @@ def main(args, device, multask=True):
 		return model1,model2
 
 	model1, model2 = create_model()
-
-	# model_soft = Soft_Att().to(device)
-
-	def worker_init_fn(worker_id):
-		random.seed(args.seed + worker_id)
 
 	best_model_path1 = os.path.join(fs_observer, save_best1_name)
 	best_model_path2 = os.path.join(fs_observer, save_best2_name)
@@ -251,12 +235,12 @@ def main(args, device, multask=True):
 			torch.save(model2.state_dict(), best_model_path2)
 
 			epochs_since_best = 0
-
 		else:
 			epochs_since_best += 1
 		if epochs_since_best > patience:  # 最大容忍不涨区间
 			break
 	info = Test_models(model1_path= best_model_path1, model2_path = best_model_path2, device=device)
+
 	if not args.UPC and not args.MPC:
 		save_results(path = "MSE_M-Nets.txt", info = info, args = args)
 	elif not args.UPC:
@@ -280,7 +264,7 @@ if __name__ == '__main__':
 	# np.random.seed(args.seed)
 	# torch.manual_seed(args.seed)
 	# torch.cuda.manual_seed(args.seed)
-	main(args, device, multask=True)
+	main(args, device)
 
 
 

@@ -11,7 +11,11 @@ from transforms.input import GaussianNoise, EnhanceContrast, EnhanceColor
 from transforms.target import Opening, ConvexHull, BoundingBox
 import funcy
 from skimage.morphology import square
+import wandb
+import dice_score
 from torch.nn import functional as F
+import psutil
+
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--labeled_bs", type=int, default=1, help='labeled_batch_size')
@@ -29,9 +33,9 @@ def get_args():
     parser.add_argument("--img_size", type=tuple, default=(256, 256), help="fixed size for img&label")
     parser.add_argument("--imgdir", type=str, default='dataset/train/img', help="path of img")
     # parser.add_argument("--labeldir", type=str, default='dataset/train/supervised/multi30', help="path of label")
-    parser.add_argument("--labeldir", type=str, default='dataset/train/mask', help="path of label")
+    parser.add_argument("--labeldir", type=str, default='dataset/train/supervised/total', help="path of label")
     parser.add_argument("--valdir", type=str, default='dataset/val/img', help="path of validation img")
-    parser.add_argument("--valsegdir", type=str, default='dataset/val/mask', help="path of validation label")
+    parser.add_argument("--valsegdir", type=str, default='dataset/val/multi', help="path of validation label")
     parser.add_argument('--deterministic', type=int, default=0,
                         help='whether use deterministic training')
     parser.add_argument('--seed', type=int, default=1337, help='random seed')
@@ -44,7 +48,7 @@ def get_args():
     parser.add_argument("--patience", type=int, default=30, help="最大容忍不变epoch")
     parser.add_argument('--temperature', type=float, default=0.1, help='temperature of sharpening')
     parser.add_argument('--gpu', type=int, default=0, help='GPU to use')
-    parser.add_argument('--label_unlabel', type=str, default='30-170', help='30-170,50-150,70-130,100-100, 100-400, 200-300')
+    parser.add_argument('--label_unlabel', type=str, default='50-150', help='10-190, 30-170,50-150,70-130,100-100, 100-400, 200-300')
     parser.add_argument('--tar', type=int, default=0, help='0 or 1')
     parser.add_argument('--UPC', type=int, default=1, help='UPC or not')
     parser.add_argument('--MA', type=int, default=1, help='MA or not')
@@ -118,7 +122,7 @@ def val_epoch(phase, epoch, model, dataloader,args,device):
 
 	return info
 def get_data(args):
-	labeled = {'30-170':[20, 149, 160],'50-150':[40, 149, 160],'70-130':[60, 149, 160],'100-100':[90, 149, 160],'100-400':[90, 149, 160],'200-300':[199,198,200]}
+	labeled = {'10-190':[5, 154, 160],'30-170':[20, 149, 160],'50-150':[40, 149, 160],'70-130':[60, 149, 160],'100-100':[90, 149, 160],'100-400':[90, 149, 160],'200-300':[199,198,200]}
 	train_preprocess_fn = available_conditioning["original"]
 	val_preprocess_fn = available_conditioning['original']
 	# 载入数据
